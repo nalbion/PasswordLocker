@@ -1,0 +1,13 @@
+{
+  "name": "Password Locker",
+  "version": "1.0",
+  "manifest_version": 2,
+  "description": "Store password reminders for various sites offline",
+  "browser_action": {
+    "default_icon": "lock.png",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "http://api.flickr.com/"
+  ]
+}
