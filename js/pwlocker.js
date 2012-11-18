@@ -1,5 +1,9 @@
 pwlocker = {};
 
+function $(id) {
+	return document.getElementById(id);
+}
+
 pwlocker.supports_html5_storage = function() {
 	try {
 		return 'localStorage' in window && window['localStorage'] !== null;
@@ -8,34 +12,137 @@ pwlocker.supports_html5_storage = function() {
 	}
 };
 
-//pwlocker.initForTest = function() {
-//	localStorage['sites'] = 'Yahoo!,Google';
-//	localStorage['sites.Yahoo!.img'] = 'http://au.yahoo.com/favicon.ico';
-//	localStorage['sites.Yahoo!.hint'] = 'hint 1';
-//	localStorage['sites.Google.img'] = 'http://www.google.com/favicon.ico';
-//	localStorage['sites.Google.hint'] = 'hint 2';
-//};
-
 pwlocker.loadFromStorage = function() {
-	var tableBody = document.getElementsByTagName('table')[0].tBodies[0],
-		siteNames = localStorage['sites'].split(',');
-		str = '';
+	var tableBody = $('site_hints').tBodies[0],
+		siteNames = localStorage['sites'];
 	
-	for( var i = 0; i < siteNames.length; i++ ) {
-		var site = siteNames[i],
-			img = localStorage['sites.' + site + '.img'],
-			hint = localStorage['sites.' + site + '.hint'];
-		str += '<tr><td><img src="' + img + '"/><td>' + site + '</td><td>' + hint + '</td></tr>';
+	if( siteNames != null ) {
+		siteNames = siteNames.split(',');
+		var str = '';
+	
+		for( var i = 0; i < siteNames.length; i++ ) {
+			var site = siteNames[i],
+				img = localStorage['sites.' + site + '.img'],
+				hint = localStorage['sites.' + site + '.hint'];
+			str += '<tr><td><img src="' + img + '"/><td>' + site + '</td><td>' + hint + '</td></tr>';
+		}
+	
+		tableBody.innerHTML = str;
+	}
+};
+
+pwlocker.showAddSite = function() {
+	var row = $('add_site');
+	if( row == null ) {
+		var tableBody = $('site_hints').tBodies[0];
+		row = document.createElement('tr');
+		row.id = 'add_site';
+		tableBody.appendChild( row );
+	}
+	pwlocker.showSiteList( row );
+};
+
+pwlocker.showSiteList = function( rowEl ) {
+	if( pwlocker.siteList == null ) {
+		pwlocker.siteList = document.createElement('div');
+
+		var sites = [ ['Apple', 'http://www.apple.com/favicon.ico'],
+		              ['Google', 'http://www.google.com/favicon.ico'],
+		              ['Hotmail', 'http://hotmail.com/favicon.ico'],
+		              ['Yahoo!', 'http://au.yahoo.com/favicon.ico'],
+		              ['Home PC', 'images/house.png'],
+		              ['Laptop', 'images/laptop.png'],
+		              ['Work PC', 'images/computer.png'],
+		              ['Work Network', 'images/network.png'] ],
+		    str = '<ul id="choose_site">';
+		
+		for( var i = 0; i < sites.length; i++ ) {
+			var site = sites[i][0],
+				img = sites[i][1];
+			str += '<li><label><input type="radio" name="site" value="' + site + '"/><img src="' + img + '"/>' + site + '</label></li>';
+		}
+		str += '</ul><ul>' + 
+				'<li><button id="show_site_list" style="display:none;">Show sites</button></li>' + 
+				'<li><label><input class="other" type="radio" name="site" value="other"/><img src="images/user_add.png"/>other</label></li>' + 
+				'</ul>';
+		str += '<input type="text" name="other_name" id="other_name" style="display:none;" placeholder="Site/computer name"/>';
+		str += '<div id="choose_img" style="display:none;"><h2>Icon</h2><ul></ul></div>';
+		
+		pwlocker.siteList.innerHTML = str;
+		var inputs = pwlocker.siteList.getElementsByTagName('input');
+		for( var i = 0; i < inputs.length; i++ ) {
+			inputs[i].onchange = function() {
+				if( this.name != 'site' ) return;
+				if( this.value == 'other' ) {
+					// Hide the main list of sites - we'll show an <input> for site name, and a list of icons to choose from
+					$('choose_site').style.display = 'none';
+					$('other_name').style.display = 'block';
+					pwlocker.showIconList(true);
+					
+					var show_site_list = $('show_site_list');
+					show_site_list.style.display = 'block';
+					if( show_site_list.onclick == null ) {
+						show_site_list.onclick = function(e) {
+							// Show the main site list and hide the "Show sites" button that was just clicked
+							e.preventDefault();
+							$('choose_site').style.display = 'block';
+							this.style.display = 'none';
+							$('other_name').style.display = 'none';
+							pwlocker.showIconList(false);
+						};
+					}
+				}
+			}
+		};
 	}
 	
-	tableBody.innerHTML = str;
+	if( rowEl.cells.length == 0 ) {
+		rowEl.appendChild( document.createElement('td') );
+		var siteCell = document.createElement('td');
+		siteCell.appendChild( pwlocker.siteList );
+		rowEl.appendChild( siteCell );
+		var hintCell = document.createElement('td');
+		hintCell.innerHTML = '<input type="text" name="hint" placeholder="A hint to remind yourself of the password"/>';
+		rowEl.appendChild( hintCell );
+		var btnCell = document.createElement('td');
+		btnCell.innerHTML = '<button class="save btn">Save</button>';
+		rowEl.appendChild( btnCell );
+	}
+	
+	
+//	rowEl.appendChild( pwlocker.siteList );
 };
+
+pwlocker.showIconList = function( show ) {
+	var chooseImg = $('choose_img');
+	if( show ) {
+		var iconList = chooseImg.getElementsByTagName('ul')[0];
+		if( iconList.innerHTML == '' ) {
+			var icons = ['computer', 'house', 'building', 'key', 'lock', 'network', 'server'],
+		    str = '';
+		
+			for( var i = 0; i < icons.length; i++ ) {
+				var icon = icons[i];
+				str += '<li><label><input type="radio" name="icon" value="images/' + icon + '.png"/><img src="images/' + icon + '.png"/>' + icon + '</label></li>';
+			}
+			str += '<li><label><input type="radio" name="icon" value="other"/>other</label><br/>' + 
+					'<input type="text" name="icon" placeholder="eg: http://url.of/favicon.ico"></li>';
+			iconList.innerHTML = str;
+		}
+		chooseImg.style.display = 'block';
+	} else {
+		chooseImg.style.display = 'none';
+	}
+};
+
 
 
 function onload() {
 	if( pwlocker.supports_html5_storage() ) {
-//		pwlocker.initForTest();
 		pwlocker.loadFromStorage();
+		pwlocker.showAddSite();
+		
+//		pwlocker.showIconList();
 	}
 }
 	
