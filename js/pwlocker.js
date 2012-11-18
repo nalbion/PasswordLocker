@@ -8,13 +8,13 @@ pwlocker.supports_html5_storage = function() {
 	}
 };
 
-pwlocker.initForTest = function() {
-	localStorage['sites'] = 'Yahoo!,Google';
-	localStorage['sites.Yahoo!.img'] = 'http://au.yahoo.com/favicon.ico';
-	localStorage['sites.Yahoo!.hint'] = 'hint 1';
-	localStorage['sites.Google.img'] = 'http://www.google.com/favicon.ico';
-	localStorage['sites.Google.hint'] = 'hint 2';
-};
+//pwlocker.initForTest = function() {
+//	localStorage['sites'] = 'Yahoo!,Google';
+//	localStorage['sites.Yahoo!.img'] = 'http://au.yahoo.com/favicon.ico';
+//	localStorage['sites.Yahoo!.hint'] = 'hint 1';
+//	localStorage['sites.Google.img'] = 'http://www.google.com/favicon.ico';
+//	localStorage['sites.Google.hint'] = 'hint 2';
+//};
 
 pwlocker.loadFromStorage = function() {
 	var tableBody = document.getElementsByTagName('table')[0].tBodies[0],
@@ -34,7 +34,7 @@ pwlocker.loadFromStorage = function() {
 
 function onload() {
 	if( pwlocker.supports_html5_storage() ) {
-		pwlocker.initForTest();
+//		pwlocker.initForTest();
 		pwlocker.loadFromStorage();
 	}
 }
