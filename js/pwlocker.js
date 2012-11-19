@@ -18,17 +18,22 @@ pwlocker.loadFromStorage = function() {
 	
 	if( siteNames != null ) {
 		siteNames = siteNames.split(',');
-		var str = '';
-	
+		
 		for( var i = 0; i < siteNames.length; i++ ) {
 			var site = siteNames[i],
 				img = localStorage['sites.' + site + '.img'],
-				hint = localStorage['sites.' + site + '.hint'];
-			str += '<tr><td><img src="' + img + '"/><td>' + site + '</td><td>' + hint + '</td></tr>';
+				hint = localStorage['sites.' + site + '.hint'],
+				row = document.createElement('tr');
+			
+			tableBody.appendChild( row );
+			pwlocker.writeSiteAndHintToRow( row, site, img, hint );
 		}
-	
-		tableBody.innerHTML = str;
 	}
+};
+
+pwlocker.writeSiteAndHintToRow = function( rowEl, site, img, hint ) {
+	var str = '<td><img src="' + img + '"/><td>' + site + '</td><td>' + hint + '</td>';
+	rowEl.innerHTML = str;
 };
 
 pwlocker.showAddSite = function() {
@@ -50,6 +55,7 @@ pwlocker.showSiteList = function( rowEl ) {
 		              ['Google', 'http://www.google.com/favicon.ico'],
 		              ['Hotmail', 'http://hotmail.com/favicon.ico'],
 		              ['Yahoo!', 'http://au.yahoo.com/favicon.ico'],
+		              ['Facebook', 'http://facebook.com/favicon.ico'],
 		              ['Home PC', 'images/house.png'],
 		              ['Laptop', 'images/laptop.png'],
 		              ['Work PC', 'images/computer.png'],
@@ -104,8 +110,58 @@ pwlocker.showSiteList = function( rowEl ) {
 		var hintCell = document.createElement('td');
 		hintCell.innerHTML = '<input type="text" name="hint" placeholder="A hint to remind yourself of the password"/>';
 		rowEl.appendChild( hintCell );
-		var btnCell = document.createElement('td');
-		btnCell.innerHTML = '<button class="save btn">Save</button>';
+		var btnCell = document.createElement('td'),
+			saveBtn = document.createElement('button');
+		saveBtn.className = 'save btn';
+		saveBtn.textContent = 'Save';
+		//btnCell.innerHTML = '<button class="save btn">Save</button>';
+		btnCell.appendChild(saveBtn);
+		saveBtn.onclick = function(e) {
+			e.preventDefault();
+			var form = $('site_form'),
+				site = form['site'],
+				icon = null;
+			
+			// site is currently an array of checkboxes - find the selected one.
+			for( var i = 0; i < site.length; i++ ) {
+				if( site[i].checked ) {
+					site = site[i];
+					break;
+				}
+			}
+			if( site.value == undefined ) return;
+			if( site.value == 'other' ) {
+				site = $('other_name').value;
+				icon = form['icon'];
+				for( var i = 0; i < icon.length; i++ ) {
+					if( icon[i].checked ) {
+						icon = icon[i];
+						break;
+					}
+				}
+				if( icon.value == 'other' ) {
+					icon = form['other_icon'].value;
+				} else {
+					icon = icon.value;
+				}
+			} else {
+				icon = site.parentNode.getElementsByTagName('img')[0].getAttribute('src');
+				site = site.value;
+			}
+			
+			// Ensure that the site name is in the sites list
+			var hint = form['hint'].value,
+				sites = localStorage['sites'];
+			if( sites == null ) {
+				sites = site;
+			} else if( sites.match('\\b' + site + '\\b') == null ) {
+				sites += ',' + site;
+			}
+			localStorage['sites'] = sites;
+			localStorage['sites.' + site + '.img'] = icon;
+			localStorage['sites.' + site + '.hint'] = hint;
+			pwlocker.writeSiteAndHintToRow(rowEl, site, icon, hint);
+		};
 		rowEl.appendChild( btnCell );
 	}
 	
@@ -126,7 +182,7 @@ pwlocker.showIconList = function( show ) {
 				str += '<li><label><input type="radio" name="icon" value="images/' + icon + '.png"/><img src="images/' + icon + '.png"/>' + icon + '</label></li>';
 			}
 			str += '<li><label><input type="radio" name="icon" value="other"/>other</label><br/>' + 
-					'<input type="text" name="icon" placeholder="eg: http://url.of/favicon.ico"></li>';
+					'<input type="text" id="other_icon" name="other_icon" placeholder="eg: http://url.of/favicon.ico"></li>';
 			iconList.innerHTML = str;
 		}
 		chooseImg.style.display = 'block';
